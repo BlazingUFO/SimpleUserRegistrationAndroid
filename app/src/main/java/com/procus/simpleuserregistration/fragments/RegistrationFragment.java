@@ -11,9 +11,11 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -33,6 +35,8 @@ import android.widget.ImageView;
 import com.procus.simpleuserregistration.R;
 import com.procus.simpleuserregistration.models.DatabaseHandler;
 import com.procus.simpleuserregistration.models.User;
+
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -43,11 +47,13 @@ import java.util.Date;
 public class RegistrationFragment extends Fragment implements View.OnClickListener, LocationListener {
 
     private Button addPhotoButton;
+    private Button takePhotoButton;
     private Button registerPhotoButton;
     private EditText nameText;
     private EditText surnameText;
     private EditText dateText;
     private static int RESULT_LOAD_IMAGE = 1;
+    private static int RESULT_TAKE_IMAGE = 2;
     private String bitmapToSave;
     private Double latitude = 0.0;
     private Double longitude = 0.0;
@@ -80,6 +86,8 @@ public class RegistrationFragment extends Fragment implements View.OnClickListen
         imageView = (ImageView) getView().findViewById(R.id.photoImageView);
         addPhotoButton = (Button) getView().findViewById(R.id.photoButton);
         addPhotoButton.setOnClickListener(this);
+        takePhotoButton = (Button) getView().findViewById(R.id.cameraButton);
+        takePhotoButton.setOnClickListener(this);
         registerPhotoButton = (Button) getView().findViewById(R.id.registerButton);
         registerPhotoButton.setOnClickListener(this);
         dateText = (EditText) getView().findViewById(R.id.birthdayText);
@@ -103,6 +111,11 @@ public class RegistrationFragment extends Fragment implements View.OnClickListen
         startActivityForResult(i, RESULT_LOAD_IMAGE);
     }
 
+    private void takePhoto(){
+        Intent i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        startActivityForResult(i, RESULT_TAKE_IMAGE);
+    }
+
 
     @Override
     public void onClick(View v) {
@@ -115,6 +128,9 @@ public class RegistrationFragment extends Fragment implements View.OnClickListen
                 break;
             case R.id.registerButton:
                 register();
+                break;
+            case R.id.cameraButton:
+                takePhoto();
                 break;
         }
     }
@@ -183,30 +199,91 @@ public class RegistrationFragment extends Fragment implements View.OnClickListen
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == RESULT_LOAD_IMAGE && resultCode == Activity.RESULT_OK && null != data) {
+        switch(requestCode) {
+            case 1:
+                if (resultCode == Activity.RESULT_OK && null != data) {
 
-            Uri selectedImage = data.getData();
-            String[] filePathColumn = {MediaStore.Images.Media.DATA};
+                    Uri selectedImage = data.getData();
+                    String[] filePathColumn = {MediaStore.Images.Media.DATA};
 
-            Cursor cursor = getActivity().getContentResolver().query(selectedImage,
-                    filePathColumn, null, null, null);
-            cursor.moveToFirst();
+                    Cursor cursor = getActivity().getContentResolver().query(selectedImage,
+                            filePathColumn, null, null, null);
+                    cursor.moveToFirst();
 
-            int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-            String picturePath = cursor.getString(columnIndex);
-            cursor.close();
+                    int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                    String picturePath = cursor.getString(columnIndex);
+                    cursor.close();
 
-            BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inSampleSize = 2;
-            Bitmap bitmap = BitmapFactory.decodeFile(picturePath, options);
+                    BitmapFactory.Options options = new BitmapFactory.Options();
+                    options.inSampleSize = 2;
+                    Bitmap bitmap = BitmapFactory.decodeFile(picturePath, options);
 
-            bitmapToSave = picturePath;
-            imageView.setImageBitmap(bitmap);
+                    bitmapToSave = picturePath;
+                    imageView.setImageBitmap(bitmap);
 
+                }
+                break;
+            case 2:
+                if (resultCode == Activity.RESULT_OK && null != data) {
+
+                    Uri selectedImage = data.getData();
+                    String[] filePathColumn = {MediaStore.Images.Media.DATA};
+
+                    Cursor cursor = getActivity().getContentResolver().query(selectedImage,
+                            filePathColumn, null, null, null);
+                    cursor.moveToFirst();
+
+                    int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                    String picturePath = cursor.getString(columnIndex);
+                    cursor.close();
+
+                    BitmapFactory.Options options = new BitmapFactory.Options();
+                    options.inSampleSize = 2;
+                    Bitmap bitmap = BitmapFactory.decodeFile(picturePath, options);
+
+                    bitmapToSave = picturePath;
+
+
+                    ExifInterface ei = null;
+                    try {
+                        ei = new ExifInterface(picturePath);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION,
+                            ExifInterface.ORIENTATION_UNDEFINED);
+
+                    switch(orientation) {
+
+                        case ExifInterface.ORIENTATION_ROTATE_90:
+                            rotateImage(bitmap, 90);
+                            break;
+
+                        case ExifInterface.ORIENTATION_ROTATE_180:
+                            rotateImage(bitmap, 180);
+                            break;
+
+                        case ExifInterface.ORIENTATION_ROTATE_270:
+                            rotateImage(bitmap, 270);
+                            break;
+
+                        case ExifInterface.ORIENTATION_NORMAL:
+
+                        default:
+                            imageView.setImageBitmap(bitmap);
+                    }
+
+
+
+                }
+                break;
         }
 
 
+
     }
+
+
 
 
     private void startLocationUpdate() {
@@ -237,6 +314,12 @@ public class RegistrationFragment extends Fragment implements View.OnClickListen
             }
 
         }
+    }
+
+    private void rotateImage(Bitmap source, float angle) {
+        Matrix matrix = new Matrix();
+        matrix.postRotate(angle);
+        imageView.setImageBitmap(Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true));
     }
 
     @Override

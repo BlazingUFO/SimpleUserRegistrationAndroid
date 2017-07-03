@@ -3,6 +3,8 @@ package com.procus.simpleuserregistration.activities;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.media.ExifInterface;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.ImageView;
@@ -18,6 +20,8 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.procus.simpleuserregistration.R;
 import com.procus.simpleuserregistration.models.DatabaseHandler;
 import com.procus.simpleuserregistration.models.User;
+
+import java.io.IOException;
 
 /**
  * Created by Peter on 3.7.17.
@@ -60,7 +64,34 @@ public class UserProfileActivity extends AppCompatActivity implements OnMapReady
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inSampleSize = 2;
             Bitmap bitmap = BitmapFactory.decodeFile(user.getPhoto(), options);
-            imageView.setImageBitmap(bitmap);
+            ExifInterface ei = null;
+            try {
+                ei = new ExifInterface(user.getPhoto());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_UNDEFINED);
+
+            switch(orientation) {
+
+                case ExifInterface.ORIENTATION_ROTATE_90:
+                    rotateImage(bitmap, 90, imageView);
+                    break;
+
+                case ExifInterface.ORIENTATION_ROTATE_180:
+                    rotateImage(bitmap, 180, imageView);
+                    break;
+
+                case ExifInterface.ORIENTATION_ROTATE_270:
+                    rotateImage(bitmap, 270, imageView);
+                    break;
+
+                case ExifInterface.ORIENTATION_NORMAL:
+
+                default:
+                    imageView.setImageBitmap(bitmap);
+            }
         }
         if(user.getName() != null && user.getSurname() != null){
             TextView username = (TextView) findViewById(R.id.profileName);
@@ -78,6 +109,12 @@ public class UserProfileActivity extends AppCompatActivity implements OnMapReady
             TextView devID = (TextView) findViewById(R.id.profileDevID);
             devID.setText(user.getDevId());
         }
+    }
+
+    private void rotateImage(Bitmap source, float angle, ImageView imageView) {
+        Matrix matrix = new Matrix();
+        matrix.postRotate(angle);
+        imageView.setImageBitmap(Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true));
     }
 
     @Override
