@@ -219,7 +219,7 @@ public class RegistrationFragment extends Fragment implements View.OnClickListen
                     Bitmap bitmap = BitmapFactory.decodeFile(picturePath, options);
 
                     bitmapToSave = picturePath;
-                    imageView.setImageBitmap(bitmap);
+                    checkImageRotation(bitmap, picturePath);
 
                 }
                 break;
@@ -243,35 +243,7 @@ public class RegistrationFragment extends Fragment implements View.OnClickListen
 
                     bitmapToSave = picturePath;
 
-
-                    ExifInterface ei = null;
-                    try {
-                        ei = new ExifInterface(picturePath);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION,
-                            ExifInterface.ORIENTATION_UNDEFINED);
-
-                    switch(orientation) {
-
-                        case ExifInterface.ORIENTATION_ROTATE_90:
-                            rotateImage(bitmap, 90);
-                            break;
-
-                        case ExifInterface.ORIENTATION_ROTATE_180:
-                            rotateImage(bitmap, 180);
-                            break;
-
-                        case ExifInterface.ORIENTATION_ROTATE_270:
-                            rotateImage(bitmap, 270);
-                            break;
-
-                        case ExifInterface.ORIENTATION_NORMAL:
-
-                        default:
-                            imageView.setImageBitmap(bitmap);
-                    }
+                    checkImageRotation(bitmap, picturePath);
 
 
 
@@ -280,6 +252,38 @@ public class RegistrationFragment extends Fragment implements View.OnClickListen
         }
 
 
+
+    }
+
+    private void checkImageRotation(Bitmap bitmap, String picturePath){
+        ExifInterface ei = null;
+        try {
+            ei = new ExifInterface(picturePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_UNDEFINED);
+
+        switch(orientation) {
+
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                rotateImage(bitmap, 90);
+                break;
+
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                rotateImage(bitmap, 180);
+                break;
+
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                rotateImage(bitmap, 270);
+                break;
+
+            case ExifInterface.ORIENTATION_NORMAL:
+
+            default:
+                imageView.setImageBitmap(bitmap);
+        }
 
     }
 
@@ -315,6 +319,8 @@ public class RegistrationFragment extends Fragment implements View.OnClickListen
 
         }
     }
+
+
 
     private void rotateImage(Bitmap source, float angle) {
         Matrix matrix = new Matrix();

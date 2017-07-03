@@ -64,33 +64,8 @@ public class UserProfileActivity extends AppCompatActivity implements OnMapReady
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inSampleSize = 2;
             Bitmap bitmap = BitmapFactory.decodeFile(user.getPhoto(), options);
-            ExifInterface ei = null;
-            try {
-                ei = new ExifInterface(user.getPhoto());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION,
-                    ExifInterface.ORIENTATION_UNDEFINED);
-
-            switch(orientation) {
-
-                case ExifInterface.ORIENTATION_ROTATE_90:
-                    rotateImage(bitmap, 90, imageView);
-                    break;
-
-                case ExifInterface.ORIENTATION_ROTATE_180:
-                    rotateImage(bitmap, 180, imageView);
-                    break;
-
-                case ExifInterface.ORIENTATION_ROTATE_270:
-                    rotateImage(bitmap, 270, imageView);
-                    break;
-
-                case ExifInterface.ORIENTATION_NORMAL:
-
-                default:
-                    imageView.setImageBitmap(bitmap);
+            if(bitmap != null){
+                checkImageRotation(bitmap, user.getPhoto(), imageView);
             }
         }
         if(user.getName() != null && user.getSurname() != null){
@@ -109,6 +84,38 @@ public class UserProfileActivity extends AppCompatActivity implements OnMapReady
             TextView devID = (TextView) findViewById(R.id.profileDevID);
             devID.setText(user.getDevId());
         }
+    }
+
+    private void checkImageRotation(Bitmap bitmap, String picturePath, ImageView imageView){
+        ExifInterface ei = null;
+        try {
+            ei = new ExifInterface(picturePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_UNDEFINED);
+
+        switch(orientation) {
+
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                rotateImage(bitmap, 90, imageView);
+                break;
+
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                rotateImage(bitmap, 180, imageView);
+                break;
+
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                rotateImage(bitmap, 270, imageView);
+                break;
+
+            case ExifInterface.ORIENTATION_NORMAL:
+
+            default:
+                imageView.setImageBitmap(bitmap);
+        }
+
     }
 
     private void rotateImage(Bitmap source, float angle, ImageView imageView) {
