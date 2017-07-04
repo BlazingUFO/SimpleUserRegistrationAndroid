@@ -98,7 +98,7 @@ public class RegistrationFragment extends Fragment implements View.OnClickListen
 
 
     private void addPhoto() {
-        if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
         } else {
             loadPhoto();
@@ -112,6 +112,14 @@ public class RegistrationFragment extends Fragment implements View.OnClickListen
     }
 
     private void takePhoto(){
+        if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 2);
+        } else {
+            openCamera();
+        }
+    }
+
+    private void openCamera(){
         Intent i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         startActivityForResult(i, RESULT_TAKE_IMAGE);
     }
@@ -229,8 +237,7 @@ public class RegistrationFragment extends Fragment implements View.OnClickListen
                     Uri selectedImage = data.getData();
                     String[] filePathColumn = {MediaStore.Images.Media.DATA};
 
-                    Cursor cursor = getActivity().getContentResolver().query(selectedImage,
-                            filePathColumn, null, null, null);
+                    Cursor cursor = getActivity().getContentResolver().query(selectedImage, filePathColumn, null, null, null);
                     cursor.moveToFirst();
 
                     int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
@@ -315,6 +322,9 @@ public class RegistrationFragment extends Fragment implements View.OnClickListen
             }
             case 1:{
                 loadPhoto();
+            }
+            case 2:{
+                openCamera();
             }
 
         }
